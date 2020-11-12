@@ -9,22 +9,29 @@ from ..utils import (
     orderedSet,
     unified_strdate,
     urlencode_postdata,
+    int_or_none,
 )
 
 
 class BitChuteIE(InfoExtractor):
     _VALID_URL = r'https?://(?:www\.)?bitchute\.com/(?:video|embed|torrent/[^/]+)/(?P<id>[^/?#&]+)'
     _TESTS = [{
-        'url': 'https://www.bitchute.com/video/szoMrox2JEI/',
-        'md5': '66c4a70e6bfc40dcb6be3eb1d74939eb',
+        'url': 'https://www.bitchute.com/video/P4ANYC8BvkJ3/',
+        'md5': 'ff78d9e66118e3d2e1c7aa9682041b1c',
+        'params': {
+            'format': 'best',
+        },
         'info_dict': {
-            'id': 'szoMrox2JEI',
+            'id': 'P4ANYC8BvkJ3',
             'ext': 'mp4',
-            'title': 'Fuck bitches get money',
-            'description': 'md5:3f21f6fb5b1d17c3dee9cf6b5fe60b3a',
+            'title': 'md5:80297dfa694317653d8dba4f3ada8561',
+            'description': 'md5:6adf97f83acf6453d4a6a4b1070f3754',
             'thumbnail': r're:^https?://.*\.jpg$',
-            'uploader': 'Victoria X Rave',
-            'upload_date': '20170813',
+            'uploader': 'md5:270c5c4168ceb4fd3bd8c3b0b90efa2a',
+            'upload_date': '20200103',
+            'view_count': int,
+            'like_count': int,
+            'dislike_count': int,
         },
     }, {
         'url': 'https://www.bitchute.com/embed/lbb5G1hjPhw/',
@@ -33,6 +40,8 @@ class BitChuteIE(InfoExtractor):
         'url': 'https://www.bitchute.com/torrent/Zee5BE49045h/szoMrox2JEI.webtorrent',
         'only_matching': True,
     }]
+
+    _TOKEN = 'CI04oENOZN1VqFMBpe27lyiRRqb0Dv5PAdQRQM7jPIRoWCHNsfD1ju5IX3wPB0q1'
 
     def _real_extract(self, url):
         video_id = self._match_id(url)
@@ -62,6 +71,9 @@ class BitChuteIE(InfoExtractor):
             formats = self._parse_html5_media_entries(
                 url, webpage, video_id)[0]['formats']
 
+        for f in formats:
+            f['format_id'] = 'http'
+
         self._check_formats(formats, video_id)
         self._sort_formats(formats)
 
@@ -80,6 +92,21 @@ class BitChuteIE(InfoExtractor):
             r'class=["\']video-publish-date[^>]+>[^<]+ at \d+:\d+ UTC on (.+?)\.',
             webpage, 'upload date', fatal=False))
 
+        data_counts = self._download_json(
+            'https://www.bitchute.com/video/%s/counts/' % video_id, video_id,
+            data=urlencode_postdata({
+                'csrfmiddlewaretoken': self._TOKEN,
+            }), headers={
+                'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
+                'Referer': url,
+                'X-Requested-With': 'XMLHttpRequest',
+                'Cookie': 'csrftoken=%s' % self._TOKEN,
+            })
+
+        view_count = int_or_none(data_counts.get('view_count'))
+        like_count = int_or_none(data_counts.get('like_count'))
+        dislike_count = int_or_none(data_counts.get('dislike_count'))
+
         return {
             'id': video_id,
             'title': title,
@@ -88,6 +115,9 @@ class BitChuteIE(InfoExtractor):
             'uploader': uploader,
             'upload_date': upload_date,
             'formats': formats,
+            'view_count': view_count,
+            'like_count': like_count,
+            'dislike_count': dislike_count,
         }
 
 
