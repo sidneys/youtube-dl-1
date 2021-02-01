@@ -706,6 +706,10 @@ def parseOpts(overrideArguments=None):
         action='store_true', dest='restrictfilenames', default=False,
         help='Restrict filenames to only ASCII characters, and avoid "&" and spaces in filenames')
     filesystem.add_option(
+        '--no-restrict-filenames',
+        action='store_false', dest='restrictfilenames',
+        help='Do not restrict filenames to only ASCII characters or avoid "&" and spaces in filenames')
+    filesystem.add_option(
         '-A', '--auto-number',
         action='store_true', dest='autonumber', default=False,
         help=optparse.SUPPRESS_HELP)
