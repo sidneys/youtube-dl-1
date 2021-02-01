@@ -255,9 +255,9 @@ Alternatively, refer to the [developer instructions](#developer-instructions) fo
     --restrict-filenames                 Restrict filenames to only ASCII
                                          characters, and avoid "&" and spaces in
                                          filenames
-    --no-restrict-filenames              Do not restrict filenames to only
-                                         ASCII characters or avoid "&" and
-                                         spaces in filenames
+    --no-restrict-filenames              Do not restrict filenames to only ASCII
+                                         characters or avoid "&" and spaces in
+                                         filenames
     -w, --no-overwrites                  Do not overwrite files
     -c, --continue                       Force resume of partially downloaded
                                          files. By default, youtube-dl will
