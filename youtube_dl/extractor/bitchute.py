@@ -52,6 +52,18 @@ class BitChuteIE(InfoExtractor):
                 'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_14_0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/69.0.3497.57 Safari/537.36',
             })
 
+        ERRORS = {
+            r'<h1 class="page-title text-center">404 - Page not found</h1>':
+            'Video %s does not exist.',
+
+            r'<h1 class="page-title">Unavailable Content</h1>':
+            'Video %s is unavailable as the contents have been deemed potentially illegal within your country by the BitChute moderation team.',
+        }
+
+        for error_re, error_msg in ERRORS.items():
+            if re.search(error_re, webpage):
+                raise ExtractorError(error_msg % video_id, expected=True)
+
         title = self._html_search_regex(
             (r'<[^>]+\bid=["\']video-title[^>]+>([^<]+)', r'<title>([^<]+)'),
             webpage, 'title', default=None) or self._html_search_meta(
@@ -156,6 +168,8 @@ class BitChuteChannelIE(InfoExtractor):
             html = data.get('html')
             if not html:
                 break
+            if re.search(r'<h1 class="page-title">Blocked Content</h1>', webpage):
+                raise ExtractorError('Channel %s has been blocked for breaching the BitChute Community Guidelines.' % channel_id, expected=True)
             video_ids = re.findall(
                 r'class=["\']channel-videos-image-container[^>]+>\s*<a\b[^>]+\bhref=["\']/video/([^"\'/]+)',
                 html)
