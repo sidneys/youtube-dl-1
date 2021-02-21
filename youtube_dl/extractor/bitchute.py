@@ -6,6 +6,7 @@ import re
 
 from .common import InfoExtractor
 from ..utils import (
+    ExtractorError,
     orderedSet,
     unified_strdate,
     urlencode_postdata,
@@ -183,21 +184,23 @@ class BitChutePlaylistIE(InfoExtractor):
             'description': 'Podcast Playlist',
         },
     }
+    _PAGE_SIZE = 25
 
     _TOKEN = 'zyG6tQcGPE5swyAEFLqKUwMuMMuF6IO2DZ6ZDQjGfsL0e4dcTLwqkTTul05Jdve7'
 
     def _entries(self, playlist_id):
-        playlist_url = 'https://www.bitchute.com/playlist/%s/' % playlist_id
-        offset = 0
-        for page_num in itertools.count(1):
+        playlist_url = 'https://www.bitchute.com/playlist/%s' % playlist_id
+        video_index = 0
+        for pagechunk_number in itertools.count(start=1, step=1):
             data = self._download_json(
-                '%sextend/' % playlist_url, playlist_id,
-                'Downloading playlist %d' % page_num,
+                url_or_request='%s/extend/' % playlist_url,
+                video_id=playlist_id,
+                note='Downloading playlist page chunk: %d' % pagechunk_number,
                 data=urlencode_postdata({
                     'csrfmiddlewaretoken': self._TOKEN,
-                    'name': '',
-                    'offset': offset,
-                }), headers={
+                    'offset': video_index,
+                }),
+                headers={
                     'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
                     'Referer': playlist_url,
                     'X-Requested-With': 'XMLHttpRequest',
@@ -213,11 +216,19 @@ class BitChutePlaylistIE(InfoExtractor):
                 html)
             if not video_ids:
                 break
-            offset += len(video_ids)
+
+            # Remember video offset pointer
+            video_index += len(video_ids)
+
             for video_id in video_ids:
                 yield self.url_result(
                     'https://www.bitchute.com/video/%s' % video_id,
-                    ie=BitChuteIE.ie_key(), video_id=video_id)
+                    ie=BitChuteIE.ie_key(),
+                    video_id=video_id)
+
+            # Exit iterator if this is last page chunk
+            if len(video_ids) < self._PAGE_SIZE:
+                break
 
     def _real_extract(self, url):
         playlist_id = self._match_id(url)
