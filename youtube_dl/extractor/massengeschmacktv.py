@@ -22,11 +22,16 @@ class MassengeschmackTVIE(InfoExtractor):
 
     _TEST = {
         'url': 'https://massengeschmack.tv/play/fktv202',
-        'md5': 'a9e054db9c2b5a08f0a0527cc201e8d3',
+        'md5': '95fbe64de62c05181af3e7c67b08dd9a',
         'info_dict': {
             'id': 'fktv202',
             'ext': 'mp4',
             'title': 'Fernsehkritik-TV - Folge 202',
+            'thumbnail': r're:^https?://.*\.jpg$',
+            'upload_date': '20170318',
+            'description': 'md5:7e711f67d9e7157189adf9173d401db6',
+            'series': 'Fernsehkritik-TV',
+            'episode_number': 202,
         },
     }
 
