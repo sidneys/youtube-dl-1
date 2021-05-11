@@ -1,6 +1,8 @@
 from __future__ import unicode_literals
 
 import re
+import locale
+import datetime
 
 from .common import InfoExtractor
 from ..utils import (
@@ -10,6 +12,7 @@ from ..utils import (
     js_to_json,
     mimetype2ext,
     parse_filesize,
+    unified_strdate,
 )
 
 
@@ -28,6 +31,7 @@ class MassengeschmackTVIE(InfoExtractor):
     }
 
     def _real_extract(self, url):
+        # Metadata
         episode = self._match_id(url)
 
         webpage = self._download_webpage(url, episode)
@@ -38,6 +42,27 @@ class MassengeschmackTVIE(InfoExtractor):
             [r'<title[^>]*>(.*?)</title>'],
             webpage, 'title')
 
+        episode_number = int_or_none(self._search_regex(
+            r' - Folge (\d+)', title, 'episode_number', default=None))
+
+        series = self._search_regex(
+            r'(.+?) - Folge', title, 'series', default=None)
+
+        description = self._html_search_regex(
+            r'(?s)<p\b[^>]+\bid=["\']clip-description[^>]+>([^<]+)<',
+            webpage, 'description', fatal=False)
+
+        releasetime = self._html_search_regex(
+            r'(?s)<h6\b[^>]+\bid=["\']clip-releasetime[^>]+>(.+?)</span>',
+            webpage, 'releasetime', fatal=False)
+
+        # set correct locale for date parsing
+        locale.setlocale(locale.LC_ALL, 'de_DE.UTF-8')
+
+        upload_date = unified_strdate(datetime.datetime.strptime(
+            releasetime, '%d. %B %Y %H:%M:%S').strftime('%Y-%m-%d %H:%M:%S'))
+
+        # Formats
         sources = self._parse_json(self._search_regex(r'(?s)MEDIA\s*=\s*(\[.+?\]);', webpage, 'media'), episode, js_to_json)
 
         formats = []
@@ -78,4 +103,8 @@ class MassengeschmackTVIE(InfoExtractor):
             'title': title,
             'formats': formats,
             'thumbnail': thumbnail,
+            'upload_date': upload_date,
+            'description': description,
+            'series': series,
+            'episode_number': episode_number,
         }
