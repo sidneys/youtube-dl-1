@@ -13,6 +13,7 @@ from ..utils import (
     mimetype2ext,
     parse_filesize,
     unified_strdate,
+    ExtractorError,
 )
 
 
@@ -40,6 +41,16 @@ class MassengeschmackTVIE(InfoExtractor):
         episode = self._match_id(url)
 
         webpage = self._download_webpage(url, episode)
+
+        # Errorhandling
+        ERRORS = {
+            r'<form id="register-form" action="/register':
+            'Login required to access %s.',
+        }
+
+        for error_re, error_msg in ERRORS.items():
+            if re.search(error_re, webpage):
+                raise ExtractorError(error_msg % episode, expected=True)
 
         thumbnail = self._search_regex(r'POSTER\s*=\s*"([^"]+)', webpage, 'thumbnail', fatal=False)
 
