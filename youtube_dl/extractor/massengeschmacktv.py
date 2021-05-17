@@ -61,6 +61,14 @@ class MassengeschmackTVIE(InfoExtractor):
             [r'<title[^>]*>(.*?)</title>'],
             webpage, 'title')
 
+        alt_title = self._html_search_regex(
+            r'(?s)<h4\b[^>]+\bid=["\']clip-shortdesc[^>]+>([^<]+)<',
+            webpage, 'alt_title', fatal=False)
+
+        # if the video has a distinct title, append it
+        if alt_title:
+            title += ' - %s' % alt_title
+
         episode_number = int_or_none(self._search_regex(
             r' - Folge (\d+)', title, 'episode_number', default=None))
 
@@ -147,6 +155,7 @@ class MassengeschmackTVIE(InfoExtractor):
             })
 
         self._sort_formats(formats, ('width', 'height', 'filesize', 'tbr'))
+
 
         return {
             'id': video_id,
