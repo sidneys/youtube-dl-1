@@ -44,7 +44,7 @@ class MassengeschmackTVIE(InfoExtractor):
         video_id = self._match_id(url)
         webpage = self._download_webpage(url, video_id)
 
-        # errorhandling
+        # error handling
         ERRORS = {
             r'<form id="register-form" action="/register':
             'Login required to access %s.',
@@ -59,21 +59,32 @@ class MassengeschmackTVIE(InfoExtractor):
 
         title = self._html_search_regex(
             [r'<title[^>]*>(.*?)</title>'],
-            webpage, 'title')
-
-        alt_title = self._html_search_regex(
-            r'(?s)<h4\b[^>]+\bid=["\']clip-shortdesc[^>]+>([^<]+)<',
-            webpage, 'alt_title', fatal=False)
-
-        # if the video has a distinct title, append it
-        if alt_title:
-            title += ' - %s' % alt_title
+            webpage, 'title', fatal=True)
 
         episode_number = int_or_none(self._search_regex(
-            r' - Folge (\d+)', title, 'episode_number', default=None))
+            r'Folge (\d+)', title, 'episode_number', fatal=False, default=None))
 
+        # detect & handle series
         series = self._search_regex(
-            r'(.+?) - Folge', title, 'series', default=None)
+            r'^(.+?) - Folge', title, 'series', fatal=False, default=None)
+
+        if series:
+            title = re.sub('^%s' % series, '', title)
+            title = title.lstrip().lstrip('-').lstrip()
+
+        # detect & handle textual episode title
+        alt_title = self._html_search_regex(
+            r'(?s)<h4\b[^>]+\bid=["\']clip-shortdesc[^>]+>([^<]+)<',
+            webpage, 'alt_title', fatal=False, default=None) or self._search_regex(
+            r'%d: (.+?)$' % episode_number, title, 'alt_title', fatal=False, default=None)
+
+        if alt_title:
+            title = re.sub('%s$' % alt_title, '', title)
+            title = title.rstrip().rstrip(':').rstrip()
+
+        # assemble final title
+        if alt_title:
+            title = '%s - %s' % (title, alt_title)
 
         description = self._html_search_regex(
             r'(?s)<p\b[^>]+\bid=["\']clip-description[^>]+>([^<]+)<',
@@ -166,4 +177,5 @@ class MassengeschmackTVIE(InfoExtractor):
             'description': description,
             'series': series,
             'episode_number': episode_number,
+            'alt_title': alt_title
         }
